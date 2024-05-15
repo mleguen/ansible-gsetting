@@ -182,7 +182,7 @@ def main():
 
     for setting, value in parsed_settings:
         old_value = _get_value(schemadir, user, setting, dbus_addr)
-        result = {'key': key, 'value': old_value}
+        result = {'key': '.'.join(setting.args), 'value': old_value}
         changed = old_value != value
         any_changed = any_changed or changed
 
