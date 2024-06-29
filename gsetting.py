@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-from os import environ
+from os import environ, path
 import re
 import subprocess
 
@@ -103,7 +103,12 @@ def _get_dbus_bus_address(user):
         return _check_output_strip(
             ['grep', '-z', '^DBUS_SESSION_BUS_ADDRESS',
              '/proc/{}/environ'.format(pid)]).strip('\0')
-
+    
+    uid = _check_output_strip(['id', '-u', user])
+    if uid:
+        bus_path = '/run/user/{}/bus'.format(uid)
+        if path.exists(bus_path):
+            return 'DBUS_SESSION_BUS_ADDRESS=unix:path={}'.format(bus_path)
 
 def _run_cmd_with_dbus(user, cmd, dbus_addr):
     if not dbus_addr:
