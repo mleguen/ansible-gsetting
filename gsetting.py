@@ -168,14 +168,14 @@ def main():
     value = module.params['value']
     settings = module.params['settings']
     any_changed = False
-    unchanged_settings = list()
-    changed_settings = list()
 
     if key is None and len(settings) == 0:
         module.fail_json(msg="Either a key or a settings dict is required, "
                              "neither was provided.")
 
     parsed_settings = []
+    before = {}
+    after = {}
 
     if key is not None:
         parsed_settings.append([Setting(schema, path, key), value])
@@ -187,21 +187,24 @@ def main():
 
     for setting, value in parsed_settings:
         old_value = _get_value(schemadir, user, setting, dbus_addr)
-        result = {'key': '.'.join(setting.args), 'value': old_value}
+        key = '.'.join(setting.args)
+        before[key] = old_value
         changed = old_value != value
         any_changed = any_changed or changed
 
-        if changed and not module.check_mode:
-            _set_value(schemadir, user, setting, value, dbus_addr)
-            result['new_value'] = value
-            changed_settings.append(result)
+        if changed:
+            if not module.check_mode:
+                _set_value(schemadir, user, setting, value, dbus_addr)
+            after[key] = value
         else:
-            unchanged_settings.append(result)
+            after[key] = old_value
 
     module.exit_json(**{
         'changed': any_changed,
-        'unchanged_settings': unchanged_settings,
-        'changed_settings': changed_settings,
+        'diff': {
+            "before": before,
+            "after": after
+        }
     })
 
 
